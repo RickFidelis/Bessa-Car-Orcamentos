@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Gerador de Orçamentos</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f9;
+        color: #333;
+      }
+
+      h1,
+      h2,
+      h3 {
+        text-align: center;
+        color: #ff8c00;
+      }
+
+      form {
+        background-color: #fff;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        max-width: 600px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+
+      input,
+      button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      button {
+        background-color: #ff8c00;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #e57a00;
+      }
+
+      table {
+        width: 90%;
+        margin: 20px auto;
+        border-collapse: collapse;
+        border: 1px solid #ddd;
+        background-color: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      th {
+        background-color: #ff8c00;
+        color: #fff;
+      }
+
+      #generate-pdf {
+        margin: 20px auto;
+        display: block;
+        max-width: 200px;
+      }
+
+      .section-title {
+        margin-top: 40px;
+        font-size: 20px;
+        color: #555;
+        text-align: center;
+      }
+
+      /* Responsividade */
+      @media (max-width: 768px) {
+        form {
+          width: 90%;
+        }
+
+        table {
+          width: 100%;
+        }
+
+        th,
+        td {
+          font-size: 12px;
+          padding: 8px;
+        }
+
+        input,
+        button {
+          font-size: 12px;
+          padding: 8px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        h1,
+        h2,
+        h3 {
+          font-size: 18px;
+        }
+
+        form {
+          padding: 15px;
+        }
+
+        th,
+        td {
+          font-size: 10px;
+          padding: 5px;
+        }
+
+        input,
+        button {
+          font-size: 10px;
+          padding: 8px;
+        }
+
+        button {
+          max-width: 100%;
+        }
+
+        #generate-pdf {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>BESSA CAR</h1>
+    <h2>Gerador de Orçamentos</h2>
+
+    <h3>Dados do Cliente</h3>
+    <form id="client-form">
+      <label>Nome do Cliente:</label>
+      <input type="text" id="client-name" required />
+      <label>Telefone:</label>
+      <input type="text" id="client-phone" required />
+      <label>Modelo do Carro:</label>
+      <input type="text" id="car-model" required />
+      <label>Cor do Carro:</label>
+      <input type="text" id="car-color" required />
+      <label>Ano do Carro:</label>
+      <input type="number" id="car-year" required />
+      <label>Placa:</label>
+      <input type="text" id="car-plate" required />
+      <button type="submit">Salvar Cliente</button>
+    </form>
+
+    <h3>Serviços</h3>
+    <form id="add-service-form">
+      <label>Serviço:</label>
+      <input type="text" id="service" required />
+      <label>Custo:</label>
+      <input type="number" id="service-cost" required />
+      <button type="submit">Adicionar Serviço</button>
+    </form>
+    <table id="services-table">
+      <thead>
+        <tr>
+          <th>Serviço</th>
+          <th>Custo</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h3>Total Serviços: R$ <span id="total-services">0.00</span></h3>
+
+    <h3>Peças</h3>
+    <form id="add-part-form">
+      <label>Peça:</label>
+      <input type="text" id="part" required />
+      <label>Custo:</label>
+      <input type="number" id="part-cost" required />
+      <button type="submit">Adicionar Peça</button>
+    </form>
+    <table id="parts-table">
+      <thead>
+        <tr>
+          <th>Peça</th>
+          <th>Custo</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h3>Total Peças: R$ <span id="total-parts">0.00</span></h3>
+
+    <h3>Valor Total: R$ <span id="grand-total">0.00</span></h3>
+    <button id="generate-pdf">Gerar PDF</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script>
+      const clientForm = document.getElementById("client-form");
+      const serviceForm = document.getElementById("add-service-form");
+      const partForm = document.getElementById("add-part-form");
+      const servicesTableBody = document
+        .getElementById("services-table")
+        .querySelector("tbody");
+      const partsTableBody = document
+        .getElementById("parts-table")
+        .querySelector("tbody");
+      const totalServicesSpan = document.getElementById("total-services");
+      const totalPartsSpan = document.getElementById("total-parts");
+      const grandTotalSpan = document.getElementById("grand-total");
+      const generatePdfBtn = document.getElementById("generate-pdf");
+
+      let totalServices = 0;
+      let totalParts = 0;
+      let clientData = {};
+
+      // Salvar dados do cliente
+      clientForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        clientData = {
+          name: document.getElementById("client-name").value,
+          phone: document.getElementById("client-phone").value,
+          carModel: document.getElementById("car-model").value,
+          carColor: document.getElementById("car-color").value,
+          carYear: document.getElementById("car-year").value,
+          carPlate: document.getElementById("car-plate").value,
+        };
+        alert("Dados do cliente salvos!");
+        clientForm.reset();
+      });
+
+      // Adicionar serviço
+      serviceForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const service = document.getElementById("service").value;
+        const serviceCost = parseFloat(
+          document.getElementById("service-cost").value
+        );
+
+        const row = servicesTableBody.insertRow();
+        row.insertCell(0).textContent = service;
+        row.insertCell(1).textContent = `R$ ${serviceCost.toFixed(2)}`;
+
+        totalServices += serviceCost;
+        totalServicesSpan.textContent = totalServices.toFixed(2);
+        updateGrandTotal();
+
+        serviceForm.reset();
+      });
+
+      // Adicionar peça
+      partForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const part = document.getElementById("part").value;
+        const partCost = parseFloat(document.getElementById("part-cost").value);
+
+        const row = partsTableBody.insertRow();
+        row.insertCell(0).textContent = part;
+        row.insertCell(1).textContent = `R$ ${partCost.toFixed(2)}`;
+
+        totalParts += partCost;
+        totalPartsSpan.textContent = totalParts.toFixed(2);
+        updateGrandTotal();
+
+        partForm.reset();
+      });
+
+      // Atualizar valor total
+      function updateGrandTotal() {
+        const grandTotal = totalServices + totalParts;
+        grandTotalSpan.textContent = grandTotal.toFixed(2);
+      }
+
+      // Gerar PDF
+      generatePdfBtn.addEventListener("click", () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const orangeDark = "#FF8C00";
+        const textStartX = 10;
+        let y = 10;
+
+        // Título e data
+        doc.setFontSize(20);
+        doc.setTextColor(orangeDark);
+        doc.text("BESSA CAR", textStartX, y);
+        doc.setFontSize(10);
+        const date = new Date().toLocaleDateString();
+        doc.text(`Data: ${date}`, 190, y, { align: "right" });
+
+        // Informações de contato
+        y += 10;
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Email: bessa.car@hotmail.com", textStartX, y);
+        y += 5;
+        doc.text("Telefone: (11) 96227-1007 / (11) 2361-9321", textStartX, y);
+        y += 5;
+        doc.text(
+          "End: Rua Major Walter Carson 346 - Jd Arpoador - SP",
+          textStartX,
+          y
+        );
+        y += 5;
+        doc.text("CNPJ: 22.144.331/0001-95", textStartX, y);
+
+        // Tabela de Dados do Cliente
+        y += 10;
+        doc.setFontSize(14);
+        doc.text("Dados do Cliente", textStartX, y);
+        y += 5;
+        doc.autoTable({
+          startY: y,
+          head: [["Nome", "Telefone"]],
+          body: [[clientData.name || "-", clientData.phone || "-"]],
+          theme: "grid",
+        });
+        y = doc.lastAutoTable.finalY + 10;
+
+        // Tabela de Dados do Carro
+        doc.setFontSize(14);
+        doc.text("Dados do Carro", textStartX, y);
+        y += 5;
+        doc.autoTable({
+          startY: y,
+          head: [["Modelo", "Cor", "Ano", "Placa"]],
+          body: [
+            [
+              clientData.carModel || "-",
+              clientData.carColor || "-",
+              clientData.carYear || "-",
+              clientData.carPlate || "-",
+            ],
+          ],
+          theme: "grid",
+        });
+        y = doc.lastAutoTable.finalY + 10;
+
+        // Tabela de Serviços
+        doc.setFontSize(14);
+        doc.text("Serviços", textStartX, y);
+        y += 5;
+        const servicesData = [];
+        servicesTableBody.querySelectorAll("tr").forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          servicesData.push([cells[0].textContent, cells[1].textContent]);
+        });
+        doc.autoTable({
+          startY: y,
+          head: [["Serviço", "Custo"]],
+          body: servicesData,
+          theme: "grid",
+        });
+        y = doc.lastAutoTable.finalY + 5;
+        doc.setFontSize(12);
+        doc.text(
+          `Total Serviços: R$ ${totalServices.toFixed(2)}`,
+          textStartX,
+          y
+        );
+
+        // Tabela de Peças
+        y += 10;
+        doc.setFontSize(14);
+        doc.text("Peças", textStartX, y);
+        y += 5;
+        const partsData = [];
+        partsTableBody.querySelectorAll("tr").forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          partsData.push([cells[0].textContent, cells[1].textContent]);
+        });
+        doc.autoTable({
+          startY: y,
+          head: [["Peça", "Custo"]],
+          body: partsData,
+          theme: "grid",
+        });
+        y = doc.lastAutoTable.finalY + 5;
+        doc.setFontSize(12);
+        doc.text(`Total Peças: R$ ${totalParts.toFixed(2)}`, textStartX, y);
+
+        // Valor Total
+        y += 20;
+        const grandTotal = totalServices + totalParts;
+        doc.setFontSize(16);
+        doc.text(`Valor Total: R$ ${grandTotal.toFixed(2)}`, 190, y, {
+          align: "right",
+        });
+
+        // Rodapé
+        doc.setFontSize(10);
+        doc.text("Obrigado por escolher a BESSA CAR!", 105, 285, {
+          align: "center",
+        });
+
+        const fileName = `Orçamento_${clientData.name || "Cliente"}_${
+          clientData.carModel || "Carro"
+        }.pdf`.replace(/[/\\?%*:|"<>]/g, "");
+        doc.save(fileName);
+      });
+    </script>
+  </body>
+</html>
